@@ -1,30 +1,32 @@
 #!/usr/bin/python3
-""" version 1 api """
-from flask import Flask, Blueprint, request, jsonify
+
+"""Status of API"""
+
+from flask import Flask, jsonify, make_response
+from flask_cors import CORS
 from models import storage
 from api.v1.views import app_views
-from os import getenv
-from flask_cors import CORS
+import os
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "0.0.0.0"}})
+app.url_map.strict_slashes = False
 app.register_blueprint(app_views)
-CORS(app)
-cors = CORS(app, resources={"/*": {"origins": "0.0.0.0"}})
-
-
-@app.errorhandler(404)
-def handle_404(ex):
-    ''' Handle 404 error. '''
-    return jsonify({'error': 'Not found'}), 404
 
 
 @app.teardown_appcontext
-def teardown(self):
-    '''close storage'''
+def tear_down(exception):
+    """Closes session"""
     storage.close()
 
 
+@app.errorhandler(404)
+def not_found(error):
+    """page not found"""
+    return make_response(jsonify({"error": "Not found"}), 404)
+
+
 if __name__ == "__main__":
-    app.run(host=getenv('HBNB_API_HOST') or '0.0.0.0',
-            port=getenv('HBNB_API_PORT') or 5000,
-            threaded=True)
+    """Runs app on in this module"""
+    app.run(host=os.getenv("HBNB_API_HOST", "0.0.0.0"), port=os.getenv(
+            "HBNB_API_PORT", "5000"), threaded=True)
